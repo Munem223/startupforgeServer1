@@ -9,27 +9,13 @@ export const mongoClient = new MongoClient(env.MONGODB_URI, {
 
 let db;
 
-/**
- * Connect DB safely before using anywhere
- */
 export async function connectDatabase() {
-  try {
-    await mongoClient.connect();
-
-    db = mongoClient.db(env.DB_NAME);
-
-    await db.command({ ping: 1 });
-
-    console.log(`✅ MongoDB connected: ${env.DB_NAME}`);
-  } catch (error) {
-    console.error("❌ MongoDB connection failed:", error);
-    process.exit(1);
-  }
+  await mongoClient.connect();
+  db = mongoClient.db(env.DB_NAME);
+  await db.command({ ping: 1 });
+  console.log(`✅ MongoDB connected: ${env.DB_NAME}`);
 }
 
-/**
- * Export DB getter (IMPORTANT)
- */
 export function getDB() {
   if (!db) {
     throw new Error("Database not initialized. Call connectDatabase first.");
