@@ -14,15 +14,14 @@ const socialProviders =
       }
     : {};
 
-let auth;
+let authInstance = null;
 
-/**
- * 🔥 IMPORTANT: initialize AFTER DB is ready
- */
 export function initAuth() {
-  const db = getDB();
+  if (authInstance) return authInstance;
 
-  auth = betterAuth({
+  const db = getDB(); // ONLY CALLED AFTER DB READY
+
+  authInstance = betterAuth({
     appName: "StartupForge",
     baseURL: env.SERVER_URL,
     basePath: "/api/auth",
@@ -49,36 +48,11 @@ export function initAuth() {
           defaultValue: "collaborator",
           input: false,
         },
-        isBlocked: {
-          type: "boolean",
-          required: true,
-          defaultValue: false,
-          input: false,
-        },
-        skills: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-          input: false,
-        },
-        bio: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-          input: false,
-        },
-        isPremium: {
-          type: "boolean",
-          required: true,
-          defaultValue: false,
-          input: false,
-        },
-        premiumUntil: {
-          type: "string",
-          required: false,
-          defaultValue: "",
-          input: false,
-        },
+        isBlocked: { type: "boolean", required: true, defaultValue: false, input: false },
+        skills: { type: "string", required: false, defaultValue: "", input: false },
+        bio: { type: "string", required: false, defaultValue: "", input: false },
+        isPremium: { type: "boolean", required: true, defaultValue: false, input: false },
+        premiumUntil: { type: "string", required: false, defaultValue: "", input: false },
       },
     },
 
@@ -86,10 +60,7 @@ export function initAuth() {
       modelName: "sessions",
       expiresIn: 60 * 60 * 24 * 7,
       updateAge: 60 * 60 * 24,
-      cookieCache: {
-        enabled: true,
-        maxAge: 60 * 5,
-      },
+      cookieCache: { enabled: true, maxAge: 60 * 5 },
     },
 
     account: {
@@ -121,7 +92,12 @@ export function initAuth() {
     },
   });
 
-  return auth;
+  return authInstance;
 }
 
-export { auth };
+export function getAuth() {
+  if (!authInstance) {
+    throw new Error("Auth not initialized. Call initAuth AFTER DB connection.");
+  }
+  return authInstance;
+}
