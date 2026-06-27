@@ -1,12 +1,11 @@
 import { fromNodeHeaders } from "better-auth/node";
-import { getAuth } from "../config/auth.js";
+import { auth } from "../config/auth.js";
 import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 
 export async function requireBetterAuthSession(req, res, next) {
   try {
-    const auth = getAuth(); // 🔥 safe access
-    const db = getDB();     // 🔥 safe access
+    const db = getDB();
 
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers),
@@ -21,18 +20,18 @@ export async function requireBetterAuthSession(req, res, next) {
       .findOne({ email: session.user.email });
 
     if (!user) {
-      throw new HttpError(401, "User account not found");
+      throw new HttpError(401, "User not found");
     }
 
     if (user.isBlocked) {
-      throw new HttpError(403, "Your account has been blocked");
+      throw new HttpError(403, "User is blocked");
     }
 
     req.authSession = session;
     req.currentUser = user;
 
     next();
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 }
