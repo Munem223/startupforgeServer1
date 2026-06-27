@@ -7,9 +7,10 @@ import { escapeRegex } from "../utils/escapeRegex.js";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 
-const db = getDB();
+
 
 export async function getFeaturedStartups(req, res) {
+  const db = getDB();
   const startups = await db
     .collection("startups")
     .find({ status: "approved" })
@@ -51,7 +52,7 @@ export async function getStartupDetails(req, res) {
     status: "approved"
   });
   if (!startup) throw new HttpError(404, "Startup not found");
-
+  const db = getDB();
   const opportunities = await db
     .collection("opportunities")
     .find({ startup_id: startup._id.toString() })
@@ -65,6 +66,7 @@ export async function getStartupDetails(req, res) {
 }
 
 export async function getFeaturedOpportunities(req, res) {
+  const db = getDB();
   const opportunities = await db
     .collection("opportunities")
     .find({ startup_status: "approved", deadline: { $gte: new Date().toISOString().slice(0, 10) } })
@@ -111,6 +113,7 @@ export async function browseOpportunities(req, res) {
 }
 
 export async function getOpportunityDetails(req, res) {
+  const db = getDB();
   const opportunity = await db.collection("opportunities").findOne({
     _id: toObjectId(req.params.id, "opportunity id"),
     startup_status: "approved"
@@ -120,6 +123,7 @@ export async function getOpportunityDetails(req, res) {
 }
 
 export async function getPublicStatistics(req, res) {
+  const db = getDB();
   const [startups, opportunities, members, accepted] = await Promise.all([
     db.collection("startups").countDocuments({ status: "approved" }),
     db.collection("opportunities").countDocuments({ startup_status: "approved" }),

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { connectDatabase, db, mongoClient } from "../config/db.js";
+import { connectDatabase, getDB, mongoClient } from "../config/db.js";
 
 const startups = [
   {
@@ -79,6 +79,7 @@ const roleTemplates = [
 
 try {
   await connectDatabase();
+  const db = getDB();
   await db.collection("applications").deleteMany({ demo: true });
   await db.collection("opportunities").deleteMany({ demo: true });
   await db.collection("startups").deleteMany({ founder_email: { $regex: "\\.demo$" } });

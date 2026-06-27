@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getDB } from "../config/db.js";
 import { success } from "../utils/response.js";
 import { serializeDocument } from "../utils/serializers.js";
-const db = getDB();
+
 const roleSchema = z.object({
   role: z.enum(["founder", "collaborator"])
 });
@@ -36,7 +36,7 @@ function publicUser(user) {
 export async function completeRegistration(req, res) {
   const { role } = roleSchema.parse(req.body);
   const email = req.currentUser.email;
-
+  const db = getDB();
   await db.collection("users").updateOne(
     { email },
     { $set: { role, updatedAt: new Date() } }
@@ -51,6 +51,7 @@ export async function getMyProfile(req, res) {
 }
 
 export async function updateMyProfile(req, res) {
+  const db = getDB();
   const values = profileSchema.parse(req.body);
   const update = {
     name: values.name,

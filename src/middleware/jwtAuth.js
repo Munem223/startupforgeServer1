@@ -3,9 +3,9 @@ import { getDB } from "../config/db.js";
 import { env } from "../config/env.js";
 import { HttpError } from "../utils/httpError.js";
 
-const db = getDB();
 
 export async function requireJwt(req, res, next) {
+  const db = getDB();
   try {
     const token = req.cookies?.[env.JWT_COOKIE_NAME];
     if (!token) throw new HttpError(401, "Access token missing");

@@ -4,13 +4,14 @@ import { HttpError } from "../utils/httpError.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
 import { serializeDocument, serializeDocuments } from "../utils/serializers.js";
-const db = getDB();
+
 const applicationSchema = z.object({
   portfolio_link: z.string().url(),
   motivation: z.string().trim().min(80).max(1500)
 });
 
 export async function applyToOpportunity(req, res) {
+  const db = getDB();
   const values = applicationSchema.parse(req.body);
   const opportunityId = req.params.opportunityId;
   const opportunity = await db.collection("opportunities").findOne({
@@ -52,6 +53,7 @@ export async function applyToOpportunity(req, res) {
 }
 
 export async function getMyApplications(req, res) {
+  const db = getDB();
   const applications = await db
     .collection("applications")
     .find({ applicant_email: req.user.email })

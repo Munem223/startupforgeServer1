@@ -3,8 +3,6 @@ import { getDB } from "../config/db.js";
 import { env } from "../config/env.js";
 import { HttpError } from "../utils/httpError.js";
 
-const db = getDB();
-
 export const stripe = env.STRIPE_SECRET_KEY
   ? new Stripe(env.STRIPE_SECRET_KEY)
   : null;
@@ -17,12 +15,19 @@ export function requireStripe() {
 }
 
 export async function persistSuccessfulPayment(session) {
+  const db = getDB(); // 🔥 FIX: move inside function
+
   if (session.payment_status !== "paid") return null;
 
   const userEmail = session.metadata?.userEmail || session.customer_email;
-  if (!userEmail) throw new HttpError(400, "Stripe session is missing the user email");
+  if (!userEmail) {
+    throw new HttpError(400, "Stripe session is missing the user email");
+  }
 
-  const existing = await db.collection("payments").findOne({ stripe_session_id: session.id });
+  const existing = await db
+    .collection("payments")
+    .findOne({ stripe_session_id: session.id });
+
   if (existing) return existing;
 
   const paidAt = new Date();
@@ -39,15 +44,16 @@ export async function persistSuccessfulPayment(session) {
         : session.payment_intent?.id || session.id,
     stripe_session_id: session.id,
     payment_status: session.payment_status,
-    paid_at: paidAt
+    paid_at: paidAt,
   };
 
   try {
     await db.collection("payments").insertOne(payment);
   } catch (error) {
-    // A webhook and success-page verification can arrive simultaneously.
     if (error?.code === 11000) {
-      return db.collection("payments").findOne({ stripe_session_id: session.id });
+      return db
+        .collection("payments")
+        .findOne({ stripe_session_id: session.id });
     }
     throw error;
   }
@@ -58,8 +64,8 @@ export async function persistSuccessfulPayment(session) {
       $set: {
         isPremium: true,
         premiumUntil: premiumUntil.toISOString(),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     }
   );
 

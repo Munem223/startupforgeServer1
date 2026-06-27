@@ -7,9 +7,10 @@ import { serializeDocuments, serializeDocument } from "../utils/serializers.js";
 
 const blockSchema = z.object({ isBlocked: z.boolean() });
 const startupStatusSchema = z.object({ status: z.enum(["approved", "removed"]) });
-const db = getDB();
+
 
 export async function getAdminOverview(req, res) {
+  const db = getDB();
   const [users, startups, opportunities, revenueAgg, roleStats, monthlyPayments] = await Promise.all([
     db.collection("users").countDocuments(),
     db.collection("startups").countDocuments(),
@@ -47,6 +48,7 @@ export async function getAdminOverview(req, res) {
 }
 
 export async function getUsers(req, res) {
+  const db = getDB();
   const users = await db
     .collection("users")
     .find({}, { projection: { email: 1, name: 1, image: 1, role: 1, isBlocked: 1, isPremium: 1, createdAt: 1 } })

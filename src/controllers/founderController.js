@@ -4,7 +4,7 @@ import { HttpError } from "../utils/httpError.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
 import { serializeDocument, serializeDocuments } from "../utils/serializers.js";
-const db = getDB();
+
 
 const startupSchema = z.object({
   startup_name: z.string().trim().min(2).max(100),
@@ -42,6 +42,7 @@ function hasValidPremium(user) {
 }
 
 export async function getFounderOverview(req, res) {
+  const db = getDB();
   const email = req.user.email;
   const [opportunities, applications, accepted, startup] = await Promise.all([
     db.collection("opportunities").countDocuments({ founder_email: email }),
@@ -66,11 +67,13 @@ export async function getFounderOverview(req, res) {
 }
 
 export async function getMyStartup(req, res) {
+  const db = getDB();
   const startup = await db.collection("startups").findOne({ founder_email: req.user.email });
   return success(res, serializeDocument(startup));
 }
 
 export async function createStartup(req, res) {
+  const db = getDB();
   const values = startupSchema.parse(req.body);
   const startup = {
     ...values,
@@ -91,6 +94,7 @@ export async function createStartup(req, res) {
 }
 
 export async function updateStartup(req, res) {
+  const db = getDB();
   const values = startupSchema.parse(req.body);
   const result = await db.collection("startups").findOneAndUpdate(
     { _id: toObjectId(req.params.id, "startup id"), founder_email: req.user.email },
@@ -122,6 +126,7 @@ export async function updateStartup(req, res) {
 }
 
 export async function deleteStartup(req, res) {
+  const db = getDB();
   const startupId = req.params.id;
   const startup = await db.collection("startups").findOne({
     _id: toObjectId(startupId, "startup id"),
@@ -146,6 +151,7 @@ export async function deleteStartup(req, res) {
 }
 
 export async function createOpportunity(req, res) {
+  const db = getDB();
   const values = opportunitySchema.parse(req.body);
   const startup = await db.collection("startups").findOne({ founder_email: req.user.email });
   if (!startup) throw new HttpError(400, "Create your startup profile first");
@@ -186,6 +192,7 @@ export async function createOpportunity(req, res) {
 }
 
 export async function getMyOpportunities(req, res) {
+  const db = getDB();
   const items = await db
     .collection("opportunities")
     .find({ founder_email: req.user.email })
@@ -195,6 +202,7 @@ export async function getMyOpportunities(req, res) {
 }
 
 export async function updateOpportunity(req, res) {
+  const db = getDB();
   const values = opportunitySchema.parse(req.body);
   if (new Date(values.deadline).getTime() < Date.now()) {
     throw new HttpError(400, "Application deadline must be in the future");
@@ -230,6 +238,7 @@ export async function updateOpportunity(req, res) {
 }
 
 export async function deleteOpportunity(req, res) {
+  const db = getDB();
   const objectId = toObjectId(req.params.id, "opportunity id");
   const result = await db.collection("opportunities").deleteOne({
     _id: objectId,
@@ -242,6 +251,7 @@ export async function deleteOpportunity(req, res) {
 }
 
 export async function getFounderApplications(req, res) {
+  const db = getDB();
   const applications = await db
     .collection("applications")
     .find({ founder_email: req.user.email })
@@ -251,6 +261,7 @@ export async function getFounderApplications(req, res) {
 }
 
 export async function updateApplicationStatus(req, res) {
+  const db = getDB();
   const { status } = applicationStatusSchema.parse(req.body);
   const application = await db.collection("applications").findOneAndUpdate(
     {

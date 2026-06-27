@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { auth } from "../config/auth.js";
-import { connectDatabase, db, mongoClient } from "../config/db.js";
+import { connectDatabase, getDB, mongoClient } from "../config/db.js";
 
 const email = process.env.ADMIN_EMAIL;
 const password = process.env.ADMIN_PASSWORD;
@@ -13,6 +13,7 @@ if (!email || !password) {
 
 try {
   await connectDatabase();
+  const db = getDB();
   let user = await db.collection("users").findOne({ email });
 
   if (!user) {

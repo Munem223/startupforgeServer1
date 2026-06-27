@@ -3,9 +3,9 @@ import { auth } from "../config/auth.js";
 import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 
+export async function requireBetterAuthSession(req, res, next) {
 const db = getDB();
 
-export async function requireBetterAuthSession(req, res, next) {
   try {
     const session = await auth.api.getSession({
       headers: fromNodeHeaders(req.headers)
