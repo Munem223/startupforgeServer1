@@ -14,90 +14,54 @@ const socialProviders =
       }
     : {};
 
-let authInstance = null;
+export const auth = betterAuth({
+  appName: "StartupForge",
+  baseURL: env.SERVER_URL,
+  basePath: "/api/auth",
+  secret: env.BETTER_AUTH_SECRET,
+  trustedOrigins: [env.CLIENT_URL],
 
-export function initAuth() {
-  if (authInstance) return authInstance;
+  database: mongodbAdapter(getDB(), { client: mongoClient }),
 
-  const db = getDB(); // ONLY CALLED AFTER DB READY
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 6,
+    maxPasswordLength: 128,
+    autoSignIn: true,
+  },
 
-  authInstance = betterAuth({
-    appName: "StartupForge",
-    baseURL: env.SERVER_URL,
-    basePath: "/api/auth",
-    secret: env.BETTER_AUTH_SECRET,
-    trustedOrigins: [env.CLIENT_URL],
+  socialProviders,
 
-    database: mongodbAdapter(db, { client: mongoClient }),
-
-    emailAndPassword: {
-      enabled: true,
-      minPasswordLength: 6,
-      maxPasswordLength: 128,
-      autoSignIn: true,
-    },
-
-    socialProviders,
-
-    user: {
-      modelName: "users",
-      additionalFields: {
-        role: {
-          type: ["founder", "collaborator", "admin"],
-          required: true,
-          defaultValue: "collaborator",
-          input: false,
-        },
-        isBlocked: { type: "boolean", required: true, defaultValue: false, input: false },
-        skills: { type: "string", required: false, defaultValue: "", input: false },
-        bio: { type: "string", required: false, defaultValue: "", input: false },
-        isPremium: { type: "boolean", required: true, defaultValue: false, input: false },
-        premiumUntil: { type: "string", required: false, defaultValue: "", input: false },
+  user: {
+    modelName: "users",
+    additionalFields: {
+      role: {
+        type: ["founder", "collaborator", "admin"],
+        defaultValue: "collaborator",
       },
+      isBlocked: { type: "boolean", defaultValue: false },
+      isPremium: { type: "boolean", defaultValue: false },
+      skills: { type: "string", defaultValue: "" },
+      bio: { type: "string", defaultValue: "" },
+      premiumUntil: { type: "string", defaultValue: "" },
     },
+  },
 
-    session: {
-      modelName: "sessions",
-      expiresIn: 60 * 60 * 24 * 7,
-      updateAge: 60 * 60 * 24,
-      cookieCache: { enabled: true, maxAge: 60 * 5 },
-    },
+  session: {
+    modelName: "sessions",
+    expiresIn: 60 * 60 * 24 * 7,
+  },
 
-    account: {
-      modelName: "accounts",
-      encryptOAuthTokens: true,
-    },
+  account: {
+    modelName: "accounts",
+  },
 
-    verification: {
-      modelName: "verifications",
-    },
+  verification: {
+    modelName: "verifications",
+  },
 
-    rateLimit: {
-      enabled: true,
-      window: 60,
-      max: 120,
-      storage: "database",
-      modelName: "authRateLimits",
-    },
-
-    advanced: {
-      cookiePrefix: "startupforge",
-      useSecureCookies: isProduction || env.COOKIE_SECURE,
-      defaultCookieAttributes: {
-        httpOnly: true,
-        secure: isProduction || env.COOKIE_SECURE,
-        sameSite: env.COOKIE_SAME_SITE,
-        path: "/",
-      },
-    },
-  });
-
-  return authInstance;
-}
-
-export function getAuth() {
-  if (!authInstance) {
-    throw new Error("Auth not initialized. Call initAuth AFTER DB connection.");
-  }
-  return authInstance;
-}
+  advanced: {
+    cookiePrefix: "startupforge",
+    useSecureCookies: isProduction || env.COOKIE_SECURE,
+  },
+});

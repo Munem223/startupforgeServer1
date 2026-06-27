@@ -1,42 +1,33 @@
 import { app } from "./app.js";
 import { connectDatabase, createIndexes, mongoClient } from "./config/db.js";
 import { env } from "./config/env.js";
-import { initAuth } from "./config/auth.js";
+import { auth } from "./config/auth.js";
 
 let server;
 
 async function start() {
   try {
-    console.log("🚀 Starting StartupForge server...");
-
-    // 1. Connect DB first
+    // 1. DB FIRST
     await connectDatabase();
-    console.log("✅ Database connected");
-
-    // 2. Create indexes
     await createIndexes();
-    console.log("✅ Indexes created");
 
-    // 3. Initialize auth AFTER DB is ready
-    initAuth();
-    console.log("✅ Auth initialized");
-
-    // 4. Start server
+    // 2. Start server
     server = app.listen(env.PORT, "0.0.0.0", () => {
-      console.log(`🚀 StartupForge API running at ${env.SERVER_URL}`);
+      console.log(`🚀 API running at ${env.SERVER_URL}`);
     });
 
   } catch (error) {
-    console.error("❌ Server startup failed:", error);
+    console.error("❌ Startup failed:", error);
     process.exit(1);
   }
 }
 
+// Graceful shutdown
 async function shutdown(signal) {
-  console.log(`\n${signal} received. Closing gracefully...`);
+  console.log(`${signal} received`);
 
   if (server) {
-    await new Promise((resolve) => server.close(resolve));
+    await new Promise((res) => server.close(res));
   }
 
   await mongoClient.close();
@@ -45,8 +36,9 @@ async function shutdown(signal) {
 
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
-process.on("unhandledRejection", (error) => {
-  console.error("Unhandled promise rejection:", error);
+
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
 });
 
 start();
