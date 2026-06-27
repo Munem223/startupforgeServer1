@@ -24,9 +24,14 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 export const app = express();
 app.set("trust proxy", 1);
 
-// ✅ INIT AUTH FIRST (CRITICAL FIX)
-const auth = initAuth();
+/**
+ * ⚠️ IMPORTANT:
+ * DO NOT call initAuth at import time in production systems
+ * It must be initialized AFTER DB in server.js
+ */
+let authInstance;
 
+// CORS
 app.use(
   cors({
     origin(origin, callback) {
@@ -35,7 +40,7 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"]
+    allowedHeaders: ["Content-Type", "Authorization", "Stripe-Signature"],
   })
 );
 
@@ -43,15 +48,23 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(morgan(env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(cookieParser());
 
-// Stripe webhook (must stay raw)
+// Stripe webhook (raw body required)
 app.post(
   "/api/payments/webhook",
   express.raw({ type: "application/json" }),
   asyncHandler(stripeWebhook)
 );
 
-// ✅ FIXED AUTH ROUTE
-app.use("/api/auth", toNodeHandler(auth.handler));
+/**
+ * ⚠️ FIX:
+ * auth is attached AFTER initAuth() runs in server.js
+ */
+app.use("/api/auth", (req, res, next) => {
+  if (!authInstance) {
+    return res.status(503).json({ message: "Auth not initialized yet" });
+  }
+  return toNodeHandler(authInstance.handler)(req, res, next);
+});
 
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true }));
@@ -63,7 +76,7 @@ app.get("/health", (req, res) => {
     success: true,
     message: "StartupForge API is healthy",
     environment: env.NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -80,3 +93,10 @@ app.use("/api/payments", paymentRoutes);
 // Error handling
 app.use(notFoundHandler);
 app.use(errorHandler);
+
+/**
+ * Called from server.js AFTER DB is ready
+ */
+export function attachAuth(instance) {
+  authInstance = instance;
+}
