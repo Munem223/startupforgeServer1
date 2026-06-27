@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
@@ -7,6 +7,7 @@ import { serializeDocuments, serializeDocument } from "../utils/serializers.js";
 
 const blockSchema = z.object({ isBlocked: z.boolean() });
 const startupStatusSchema = z.object({ status: z.enum(["approved", "removed"]) });
+const db = getDB();
 
 export async function getAdminOverview(req, res) {
   const [users, startups, opportunities, revenueAgg, roleStats, monthlyPayments] = await Promise.all([

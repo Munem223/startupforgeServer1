@@ -1,7 +1,9 @@
 import jwt from "jsonwebtoken";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { env } from "../config/env.js";
 import { HttpError } from "../utils/httpError.js";
+
+const db = getDB();
 
 export async function requireJwt(req, res, next) {
   try {

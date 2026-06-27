@@ -1,7 +1,9 @@
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../config/auth.js";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
+
+const db = getDB();
 
 export async function requireBetterAuthSession(req, res, next) {
   try {

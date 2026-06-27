@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { success } from "../utils/response.js";
 import { serializeDocument } from "../utils/serializers.js";
-
+const db = getDB();
 const roleSchema = z.object({
   role: z.enum(["founder", "collaborator"])
 });

@@ -1,7 +1,9 @@
 import Stripe from "stripe";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { env } from "../config/env.js";
 import { HttpError } from "../utils/httpError.js";
+
+const db = getDB();
 
 export const stripe = env.STRIPE_SECRET_KEY
   ? new Stripe(env.STRIPE_SECRET_KEY)

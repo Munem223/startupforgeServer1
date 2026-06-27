@@ -1,4 +1,4 @@
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
 import { serializeDocument, serializeDocuments } from "../utils/serializers.js";
@@ -6,6 +6,8 @@ import { HttpError } from "../utils/httpError.js";
 import { escapeRegex } from "../utils/escapeRegex.js";
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+const db = getDB();
 
 export async function getFeaturedStartups(req, res) {
   const startups = await db

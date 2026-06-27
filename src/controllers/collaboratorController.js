@@ -1,10 +1,10 @@
 import { z } from "zod";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
 import { serializeDocument, serializeDocuments } from "../utils/serializers.js";
-
+const db = getDB();
 const applicationSchema = z.object({
   portfolio_link: z.string().url(),
   motivation: z.string().trim().min(80).max(1500)

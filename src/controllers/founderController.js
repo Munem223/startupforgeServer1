@@ -1,9 +1,10 @@
 import { z } from "zod";
-import { db } from "../config/db.js";
+import { getDB } from "../config/db.js";
 import { HttpError } from "../utils/httpError.js";
 import { toObjectId } from "../utils/objectId.js";
 import { success } from "../utils/response.js";
 import { serializeDocument, serializeDocuments } from "../utils/serializers.js";
+const db = getDB();
 
 const startupSchema = z.object({
   startup_name: z.string().trim().min(2).max(100),
