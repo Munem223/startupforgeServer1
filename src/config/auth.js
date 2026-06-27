@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { mongodbAdapter } from "better-auth/adapters/mongodb";
-import { db, mongoClient } from "./db.js";
+import { getDB, mongoClient } from "./db.js";
 import { env, isProduction } from "./env.js";
 
 const socialProviders =
@@ -20,7 +20,7 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.CLIENT_URL],
-  database: mongodbAdapter(db, { client: mongoClient }),
+  database: mongodbAdapter(getDB(), { client: mongoClient }),
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
