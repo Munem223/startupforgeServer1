@@ -8,7 +8,7 @@ async function start() {
   try {
     await connectDatabase();
     await createIndexes();
-    server = app.listen(env.PORT, () => {
+    server = app.listen(env.PORT, "0.0.0.0", () => {
       console.log(`🚀 StartupForge API running at ${env.SERVER_URL}`);
     });
   } catch (error) {
