@@ -9,10 +9,15 @@ const socialProviders =
         google: {
           clientId: env.GOOGLE_CLIENT_ID,
           clientSecret: env.GOOGLE_CLIENT_SECRET,
-          prompt: "select_account"
-        }
+          prompt: "select_account",
+        },
       }
     : {};
+
+// 🔥 IMPORTANT FIX: delay DB access
+function getAuthDB() {
+  return getDB();
+}
 
 export const auth = betterAuth({
   appName: "StartupForge",
@@ -20,14 +25,19 @@ export const auth = betterAuth({
   basePath: "/api/auth",
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.CLIENT_URL],
-  database: mongodbAdapter(getDB(), { client: mongoClient }),
+
+  // ✅ FIXED: DB only accessed when function runs, not at import time
+  database: mongodbAdapter(getAuthDB(), { client: mongoClient }),
+
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
     maxPasswordLength: 128,
-    autoSignIn: true
+    autoSignIn: true,
   },
+
   socialProviders,
+
   user: {
     modelName: "users",
     additionalFields: {
@@ -35,63 +45,68 @@ export const auth = betterAuth({
         type: ["founder", "collaborator", "admin"],
         required: true,
         defaultValue: "collaborator",
-        input: false
+        input: false,
       },
       isBlocked: {
         type: "boolean",
         required: true,
         defaultValue: false,
-        input: false
+        input: false,
       },
       skills: {
         type: "string",
         required: false,
         defaultValue: "",
-        input: false
+        input: false,
       },
       bio: {
         type: "string",
         required: false,
         defaultValue: "",
-        input: false
+        input: false,
       },
       isPremium: {
         type: "boolean",
         required: true,
         defaultValue: false,
-        input: false
+        input: false,
       },
       premiumUntil: {
         type: "string",
         required: false,
         defaultValue: "",
-        input: false
-      }
-    }
+        input: false,
+      },
+    },
   },
+
   session: {
     modelName: "sessions",
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
     cookieCache: {
       enabled: true,
-      maxAge: 60 * 5
-    }
+      maxAge: 60 * 5,
+    },
   },
+
   account: {
     modelName: "accounts",
-    encryptOAuthTokens: true
+    encryptOAuthTokens: true,
   },
+
   verification: {
-    modelName: "verifications"
+    modelName: "verifications",
   },
+
   rateLimit: {
     enabled: true,
     window: 60,
     max: 120,
     storage: "database",
-    modelName: "authRateLimits"
+    modelName: "authRateLimits",
   },
+
   advanced: {
     cookiePrefix: "startupforge",
     useSecureCookies: isProduction || env.COOKIE_SECURE,
@@ -99,7 +114,7 @@ export const auth = betterAuth({
       httpOnly: true,
       secure: isProduction || env.COOKIE_SECURE,
       sameSite: env.COOKIE_SAME_SITE,
-      path: "/"
-    }
-  }
+      path: "/",
+    },
+  },
 });
