@@ -1,73 +1,27 @@
 import Stripe from "stripe";
 import { getDB } from "../config/db.js";
 import { env } from "../config/env.js";
-import { HttpError } from "../utils/httpError.js";
 
 export const stripe = env.STRIPE_SECRET_KEY
   ? new Stripe(env.STRIPE_SECRET_KEY)
   : null;
 
-export function requireStripe() {
-  if (!stripe) {
-    throw new HttpError(503, "Stripe is not configured on the server");
-  }
-  return stripe;
-}
-
 export async function persistSuccessfulPayment(session) {
-  const db = getDB(); // 🔥 FIX: move inside function
+  const db = getDB(); // SAFE now
 
-  if (session.payment_status !== "paid") return null;
+  if (session.payment_status !== "paid") return;
 
-  const userEmail = session.metadata?.userEmail || session.customer_email;
-  if (!userEmail) {
-    throw new HttpError(400, "Stripe session is missing the user email");
-  }
+  const email = session.metadata?.userEmail || session.customer_email;
+  if (!email) throw new Error("Missing email");
 
-  const existing = await db
-    .collection("payments")
-    .findOne({ stripe_session_id: session.id });
-
-  if (existing) return existing;
-
-  const paidAt = new Date();
-  const premiumUntil = new Date();
-  premiumUntil.setFullYear(premiumUntil.getFullYear() + 1);
-
-  const payment = {
-    user_email: userEmail,
-    amount: (session.amount_total || 0) / 100,
-    currency: session.currency || env.STRIPE_CURRENCY,
-    transaction_id:
-      typeof session.payment_intent === "string"
-        ? session.payment_intent
-        : session.payment_intent?.id || session.id,
+  await db.collection("payments").insertOne({
+    email,
     stripe_session_id: session.id,
-    payment_status: session.payment_status,
-    paid_at: paidAt,
-  };
-
-  try {
-    await db.collection("payments").insertOne(payment);
-  } catch (error) {
-    if (error?.code === 11000) {
-      return db
-        .collection("payments")
-        .findOne({ stripe_session_id: session.id });
-    }
-    throw error;
-  }
+    amount: session.amount_total
+  });
 
   await db.collection("users").updateOne(
-    { email: userEmail },
-    {
-      $set: {
-        isPremium: true,
-        premiumUntil: premiumUntil.toISOString(),
-        updatedAt: new Date(),
-      },
-    }
+    { email },
+    { $set: { isPremium: true } }
   );
-
-  return payment;
 }
