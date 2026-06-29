@@ -1,37 +1,23 @@
 import { MongoClient } from "mongodb";
 import { env } from "./env.js";
 
-export const mongoClient = new MongoClient(env.MONGODB_URI, {
-  maxPoolSize: 20,
-  minPoolSize: 2,
-  serverSelectionTimeoutMS: 10000,
-});
+export const mongoClient = new MongoClient(env.MONGODB_URI);
 
-let db;
+let db = null;
+let isConnected = false;
 
-/**
- * Connect to MongoDB (call ONCE at server start)
- */
 export async function connectDatabase() {
-  try {
-    await mongoClient.connect();
+  if (isConnected) return;
 
-    db = mongoClient.db(env.DB_NAME);
+  await mongoClient.connect();
+  db = mongoClient.db(env.DB_NAME);
+  isConnected = true;
 
-    // health check
-    await db.command({ ping: 1 });
+  await db.command({ ping: 1 });
 
-    console.log(`✅ MongoDB connected: ${env.DB_NAME}`);
-  } catch (error) {
-    console.error("❌ MongoDB connection failed:", error);
-    process.exit(1);
-  }
+  console.log("✅ MongoDB connected:", env.DB_NAME);
 }
 
-/**
- * Get database instance safely
- * (use this in other files instead of importing db directly)
- */
 export function getDB() {
   if (!db) {
     throw new Error("Database not initialized. Call connectDatabase first.");
@@ -39,63 +25,13 @@ export function getDB() {
   return db;
 }
 
-/**
- * Create indexes (run after DB connection)
- */
 export async function createIndexes() {
   const database = getDB();
 
   await Promise.all([
-    database.collection("startups").createIndex(
-      { founder_email: 1 },
-      { unique: true }
-    ),
-
-    database.collection("startups").createIndex({
-      status: 1,
-      createdAt: -1,
-    }),
-
-    database.collection("opportunities").createIndex({
-      createdAt: -1,
-    }),
-
-    database.collection("opportunities").createIndex({
-      role_title: 1,
-    }),
-
-    database.collection("opportunities").createIndex({
-      required_skills: 1,
-    }),
-
-    database.collection("opportunities").createIndex({
-      work_type: 1,
-      industry: 1,
-    }),
-
-    database.collection("applications").createIndex(
-      { opportunity_id: 1, applicant_email: 1 },
-      { unique: true }
-    ),
-
-    database.collection("applications").createIndex({
-      founder_email: 1,
-      applied_at: -1,
-    }),
-
-    database.collection("applications").createIndex({
-      applicant_email: 1,
-      applied_at: -1,
-    }),
-
-    database.collection("payments").createIndex(
-      { stripe_session_id: 1 },
-      { unique: true }
-    ),
-
-    database.collection("payments").createIndex({
-      paid_at: -1,
-    }),
+    database.collection("startups").createIndex({ founder_email: 1 }, { unique: true }),
+    database.collection("applications").createIndex({ applicant_email: 1 }),
+    database.collection("payments").createIndex({ stripe_session_id: 1 }, { unique: true }),
   ]);
 
   console.log("✅ Database indexes ready");
